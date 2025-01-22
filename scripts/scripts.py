@@ -54,6 +54,10 @@ def load_geometry(geometry):
 	output_lines.pop(0)
 	atom_list = []
 	for x, line in enumerate(output_lines):
+		# Check if the line is empty or contains only whitespace characters
+		if line.strip() == "":
+			break  # Stop processing when an empty line is encountered
+		# print(x, line)
 		a = line.split()
 		atom_list.append([x+1, a[0], float(a[1]), float(a[2]), float(a[3])])
 		
@@ -67,7 +71,9 @@ def create_key(base_atoms, dummy_atoms, bond_atoms):
 	extra_atoms = []
 	for line1 in base_atoms:
 		for line2 in dummy_atoms:
-			if line1[1:] == line2[1:]:
+			# if line1[1:] == line2[1:]:
+			if line1[1] == line2[1] and sum((float(dummy_coord) - float(base_coord))**2 for dummy_coord, base_coord in zip(line2[2:], line1[2:])) < 1e-6:
+				# print(f"line1: {line1}, line2: {line2}")
 				key.append([line2[0], line1[0]])
 				
 	#Find atoms in dummy, but not in base geometry
@@ -75,11 +81,14 @@ def create_key(base_atoms, dummy_atoms, bond_atoms):
 	for line in dummy_atoms:
 		if line[0] not in [x[0] for x in key]:
 			extra_atoms.append(line[0])
+
+	# print(extra_atoms)
 	
 	#Find atoms attached to those extra atoms
 	peripheral_atoms = []
 	for line in bond_atoms:
 		for atom in extra_atoms:
+			# print(f"line: {line}, atom: {atom}")
 			if str(atom) == line[0]:
 				peripheral_atoms.append(int(line[1]))
 			elif str(atom) == line[1] and int(line[0]) not in peripheral_atoms:
