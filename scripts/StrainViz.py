@@ -35,9 +35,19 @@ averaged_dihedral_forces = combine_dummies(full_dihedral_forces, geometry_filena
 
 missing_atoms = False
 for line in load_geometry("input/" + geometry_filename):
-    if line[1:] not in full_atoms:
+    # print(f"line: {line}")
+    line_in_full_atoms = False
+    for full_atom in full_atoms:
+        if line[1] == full_atom[0] and sum((float(line_coord) - float(full_coord))**2 for line_coord, full_coord in zip(line[2:], full_atom[1:])) < 1e-6:
+            line_in_full_atoms = True
+            break
+    if line_in_full_atoms == False:
+        # print(f"line not in full_atoms: {line}")
         missing_atoms = True
-
+        break
+    # if line[1:] not in full_atoms:
+    #     missing_atoms = True
+# print(f"missing_atoms: {missing_atoms}")
 if missing_atoms == True:
     print("Base molecule not fully covered. Make more fragments.")
 
