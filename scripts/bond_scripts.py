@@ -1,21 +1,79 @@
 from scripts import get_atom_coords, get_connectivity_data, load_geometry, create_key
 import os
 import copy
+
+# Define the header content as a multi-line string
+header_content = """\
+# Change bond radii and various resolution parameters
+mol representation cpk 0.8 0.0 30 5
+mol representation bonds 0.2 30
+
+# Change the drawing method of the first graphical representation to CPK
+mol modstyle 0 top cpk
+axes location off
+display cuedensity 0.25
+# Color only H atoms white
+mol modselect 0 top {name H}
+# Change the color of the graphical representation 0 to white
+color change rgb 0 1.00 1.00 1.00
+mol modcolor 0 top {colorid 0}
+# The background should be white ("blue" has the colorID 0, which we have changed to white)
+color Display Background blue
+
+# Define the other colorIDs
+color change rgb   1  0.000000  1.000000  0.000000
+color change rgb   2  0.062500  1.000000  0.000000
+color change rgb   3  0.125000  1.000000  0.000000
+color change rgb   4  0.187500  1.000000  0.000000
+color change rgb   5  0.250000  1.000000  0.000000
+color change rgb   6  0.312500  1.000000  0.000000
+color change rgb   7  0.375000  1.000000  0.000000
+color change rgb   8  0.437500  1.000000  0.000000
+color change rgb   9  0.500000  1.000000  0.000000
+color change rgb  10  0.562500  1.000000  0.000000
+color change rgb  11  0.625000  1.000000  0.000000
+color change rgb  12  0.687500  1.000000  0.000000
+color change rgb  13  0.750000  1.000000  0.000000
+color change rgb  14  0.812500  1.000000  0.000000
+color change rgb  15  0.875000  1.000000  0.000000
+color change rgb  16  0.937500  1.000000  0.000000
+color change rgb  17  1.000000  0.937500  0.000000
+color change rgb  18  1.000000  0.875000  0.000000
+color change rgb  19  1.000000  0.812500  0.000000
+color change rgb  20  1.000000  0.750000  0.000000
+color change rgb  21  1.000000  0.687500  0.000000
+color change rgb  22  1.000000  0.625000  0.000000
+color change rgb  23  1.000000  0.562500  0.000000
+color change rgb  24  1.000000  0.500000  0.000000
+color change rgb  25  1.000000  0.437500  0.000000
+color change rgb  26  1.000000  0.375000  0.000000
+color change rgb  27  1.000000  0.312500  0.000000
+color change rgb  28  1.000000  0.250000  0.000000
+color change rgb  29  1.000000  0.187500  0.000000
+color change rgb  30  1.000000  0.125000  0.000000
+color change rgb  31  1.000000  0.062500  0.000000
+color change rgb  32  1.000000  0.000000  0.000000
+
+# Adding a representation with the appropriate colorID for each bond
+"""
+
 """ Maps the force values from the output file onto the original geometry .xyz file by digesting 
 the output files and writing .tcl scripts to by viewed in VMD
 """
 def map_forces(geometry, force_output):
 	#Parse file for values
 	bond_forces, angle_forces, dihedral_forces = force_parse(geometry[:-4] + "/" + force_output)
-
+	# print(bond_forces)
 	bond_atoms = []
 	for line in bond_forces:
 		bond_atoms.append(bond_forces[1])
-	
+	# print(f"bond atoms:{bond_atoms}")
 	#Use the base geometry and unoptimized dummy geometry to create a key
 	key = create_key(load_geometry(geometry), load_geometry(geometry[:-4] + "/" + os.path.splitext(force_output)[0] + ".xyz"), bond_atoms)
 	
+	# print(f"key:{key}")
 	mapped_bond_forces = translate_forces(bond_forces, key)
+	# print(mapped_bond_forces)
 	mapped_angle_forces = translate_forces(angle_forces, key)
 	mapped_dihedral_forces = translate_forces(dihedral_forces, key)
 	
@@ -37,11 +95,14 @@ def map_forces(geometry, force_output):
 	dihedral_forces_vmd, dihedral_min, dihedral_max = vmd_norm(compressed_dihedral_forces)
 	
 	raw_output_writer(geometry[6:-4] + "/bond_" + os.path.splitext(force_output)[0] + ".txt", copy_bond_forces)
-	vmd_writer(geometry[6:-4] + "/bond_" + os.path.splitext(force_output)[0] + ".tcl", bond_forces_vmd, geometry[6:], bond_min, bond_max, "scripts/vmd_header.tcl")
+	vmd_writer(geometry[6:-4] + "/bond_" + os.path.splitext(force_output)[0] + ".tcl", bond_forces_vmd, geometry[6:], bond_min, bond_max)
+	# vmd_writer(geometry[6:-4] + "/bond_" + os.path.splitext(force_output)[0] + ".tcl", bond_forces_vmd, geometry[6:], bond_min, bond_max, "scripts/vmd_header.tcl")
 	raw_output_writer(geometry[6:-4] + "/angle_" + os.path.splitext(force_output)[0] + ".txt", copy_angle_forces)
-	vmd_writer(geometry[6:-4] + "/angle_" + os.path.splitext(force_output)[0] + ".tcl", angle_forces_vmd, geometry[6:], angle_min, angle_max, "scripts/vmd_header.tcl")
+	vmd_writer(geometry[6:-4] + "/angle_" + os.path.splitext(force_output)[0] + ".tcl", angle_forces_vmd, geometry[6:], angle_min, angle_max)
+	# vmd_writer(geometry[6:-4] + "/angle_" + os.path.splitext(force_output)[0] + ".tcl", angle_forces_vmd, geometry[6:], angle_min, angle_max, "scripts/vmd_header.tcl")
 	raw_output_writer(geometry[6:-4] + "/dihedral_" + os.path.splitext(force_output)[0] + ".txt", copy_dihedral_forces)
-	vmd_writer(geometry[6:-4] + "/dihedral_" + os.path.splitext(force_output)[0] + ".tcl", dihedral_forces_vmd, geometry[6:], dihedral_min, dihedral_max, "scripts/vmd_header.tcl")	
+	vmd_writer(geometry[6:-4] + "/dihedral_" + os.path.splitext(force_output)[0] + ".tcl", dihedral_forces_vmd, geometry[6:], dihedral_min, dihedral_max)	
+	# vmd_writer(geometry[6:-4] + "/dihedral_" + os.path.splitext(force_output)[0] + ".tcl", dihedral_forces_vmd, geometry[6:], dihedral_min, dihedral_max, "scripts/vmd_header.tcl")	
 
 	return copy_bond_forces, copy_angle_forces, copy_dihedral_forces
 
@@ -184,13 +245,14 @@ def vmd_norm(force_values):
 and the bonds they belong to", "name of geometry.xyz")
 Writes the script that you can then run in the VMD Tk Console using "source script.tcl"
 """
-def vmd_writer(script_name, bond_colors, geometry_filename, min, max, header):
+def vmd_writer(script_name, bond_colors, geometry_filename, min, max, header=header_content):
 	script = open('output/' + script_name, "w")
 	script.write("# Minimum value: %s\n# Maximum value: %s\n\n" % (min*627.509, max*627.509))
 	script.write("# Load a molecule\nmol new %s\n\n" % (geometry_filename))
-	with open(header) as script_header:
-		for line in script_header:
-			script.write(line)
+	# with open(header) as script_header:
+	# 	for line in script_header:
+	# 		script.write(line)
+	script.write(header_content)
 	script.write("\n")
 	for index, line in enumerate(bond_colors):
 		script.write("mol addrep top\n")
@@ -256,7 +318,8 @@ def combine_dummies(forces, geometry, force_type):
 
 	#Write the forces to a .tcl script
 	new_forces_vmd, scale_min, scale_max = vmd_norm(new_forces)
-	vmd_writer(geometry[:-4] + "/" + force_type + "_total.tcl", new_forces_vmd, geometry, scale_min, scale_max, "scripts/vmd_header.tcl")
+	vmd_writer(geometry[:-4] + "/" + force_type + "_total.tcl", new_forces_vmd, geometry, scale_min, scale_max)
+	# vmd_writer(geometry[:-4] + "/" + force_type + "_total.tcl", new_forces_vmd, geometry, scale_min, scale_max, "scripts/vmd_header.tcl")
 
 	return output_forces
 	
@@ -286,4 +349,5 @@ def combine_force_types(forces, geometry):
 	#Write the forces to a .tcl script
 	raw_output_writer(geometry[:-4] + "/total_force.txt", new_forces)
 	new_forces_vmd, scale_min, scale_max = vmd_norm(new_forces)
-	vmd_writer(geometry[:-4] + "/total_force.tcl", new_forces_vmd, geometry, scale_min, scale_max, "scripts/vmd_header.tcl")
+	vmd_writer(geometry[:-4] + "/total_force.tcl", new_forces_vmd, geometry, scale_min, scale_max)
+	# vmd_writer(geometry[:-4] + "/total_force.tcl", new_forces_vmd, geometry, scale_min, scale_max, "scripts/vmd_header.tcl")
