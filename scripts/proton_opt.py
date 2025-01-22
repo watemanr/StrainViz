@@ -15,7 +15,10 @@ def create_protonopts(base, dummy, level):
 	for dummy_atom in dummy_geometry:
 		for base_atom in base_geometry:
 			found = False
-			if dummy_atom[1:4] == base_atom[1:4]:
+			# print(dummy_atom)
+			# print(base_atom)
+			# if dummy_atom[1:4] == base_atom[1:4]:
+			if dummy_atom[1] == base_atom[1] and sum((float(dummy_coord) - float(base_coord))**2 for dummy_coord, base_coord in zip(dummy_atom[2:4], base_atom[2:4])) < 1e-6:
 				input_geometry.append([dummy_atom[0],dummy_atom[1],"-1",dummy_atom[2],dummy_atom[3],dummy_atom[4]])
 				found = True
 				break
@@ -23,7 +26,8 @@ def create_protonopts(base, dummy, level):
 			input_geometry.append(dummy_atom)
 	
 	script = open(os.path.splitext(dummy)[0] + "_protonopt.inp", "w")
-	script.write("%NProcShared=" + sys.argv[2] + "\n#n " + level + " opt\n\n")
+	# print(level)
+	script.write("%NProcShared=" + sys.argv[2] + "\n# " + level + " opt\n\n")
 	script.write(" proton optimization\n\n0 1\n")
 	for atom in input_geometry:
 		for x in atom[1:]:
@@ -36,12 +40,19 @@ def create_protonopts(base, dummy, level):
 # Execution
 
 geometry_filename = "input/" + sys.argv[1] + ".xyz"
+# print(geometry_filename)
 level = sys.argv[3]
+# print(level)
 
 fragments = []
 for file in os.listdir(geometry_filename[:-4]):
     if file.endswith(".xyz"):
         fragments.append(geometry_filename[:-4] + "/" + file)
 
+# print(fragments)
+
 for file in fragments:
-    create_protonopts(geometry_filename, file, level)
+	# print(geometry_filename)	
+	# print(file)
+	# print(level)
+	create_protonopts(geometry_filename, file, level)
