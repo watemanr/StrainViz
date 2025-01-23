@@ -2,7 +2,160 @@
 
 ---
 
+## **Installing StrainViz on the GUIZI Cluster**
+
+### **1. Download StrainViz via `git`**
+
+I have forked the original StrainViz repository and adapted it to support the SLURM system. It is recommended to clone the repository into the directory: `/home/$USER/Apps`.
+
+```bash
+mkdir -p /home/$USER/Apps
+
+cd /home/$USER/Apps
+
+git clone git@github.com:watemanr/StrainViz.git
+```
+
+If the GitHub link is inaccessible via CLI, you can alternatively extract the provided `StrainViz.zip` or another compressed file into `/home/$USER/Apps`.
+
+### **2. Update the StrainViz Path in `sub_StrainViz.sh`**
+
+Edit the variable `$StrainViz_path` in the `sub_StrainViz.sh` script to match your installation path. The recommended and default path is `/home/$USER/Apps/StrainViz/`.
+
+### **3. Update Default Queue and Core Number**
+
+Modify the default queue name and core number at the top of `sub_StrainViz.sh` to align with the cluster configuration. Ensure the defaults fit the system’s specifications.
+
+---
+
 ## **Workflow for Using StrainViz on the GUIZI Cluster**
+
+### **1. Prepare XYZ Files**
+
+Prepare the XYZ files for the entire ring and its fragments. The folder structure should follow the format below:
+
+```
+folder/
+├── input/
+│   ├── mol_name/
+│   │   ├── mol_name-1.xyz
+│   │   ├── mol_name-2.xyz
+│   │   ├── mol_name-3.xyz
+│   │   ├── mol_name-4.xyz
+│   └── mol_name.xyz
+```
+
+**Rules**:
+- The `input` directory must be named as `input`.
+- The base name of `mol_name.xyz`, and the folder `mol_name` must share the same name.
+- The fragment XYZ files within the `mol_name` folder do not need specific naming conventions, but they must all have a `.xyz` extension. The script will automatically scan the folder and include them.
+
+---
+
+### **2. Navigate to the Working Directory**
+
+Change to the folder containing your input files, for example:
+
+```bash
+cd /home/$USER/data/test/test_StrainViz/test_slurm
+```
+
+Verify the directory contents:
+```bash
+[yzhou@master:/home/yzhou/data/test/test_StrainViz/test_slurm] ll
+total 18
+drwxrwxr-x 3 yzhou yzhou    4 Jan 22 17:15 input
+[yzhou@master:/home/yzhou/data/test/test_StrainViz/test_slurm] ll ./input/
+total 22
+drwxrwxr-x 2 yzhou yzhou   14 Jan 22 17:37 mol
+-rw-rw-r-- 1 yzhou yzhou 2136 Jan 22 17:15 mol.xyz
+```
+
+---
+
+### **3. Run the `sub_StrainViz.sh` Script**
+
+The default and recommended path for the script is `/home/$USER/Apps/StrainViz`.
+
+To view the usage instructions, run:
+```bash
+bash /home/$USER/Apps/StrainViz/sub_StrainViz.sh -h
+```
+
+**Output:**
+```
+Usage: /home/$USER/Apps/StrainViz/sub_StrainViz.sh -r <molecule_name> [-N <num_procs>] [-q <queue_name>] [-m <method>] [-h]
+
+Options:
+  -r <molecule_name>   Specify the molecule name (required)
+  -N <num_procs>       Number of processors (default: 48)
+  -q <queue_name>      Queue name for job submission (default: standard)
+  -m <method>          Calculation method (optional)
+  -h                   Show this help message and exit
+```
+
+Run the script as follows:
+```bash
+bash /home/$USER/Apps/StrainViz/sub_StrainViz.sh -r <molecule_name> -N <core_numbers> -m "<calc_method>"
+```
+
+- The `-m` option supports strings instead of a single word. Enclose the entire calculation method in quotes, excluding the `opt` keyword (e.g., `"b3lyp/def2svp em=gd3bj"`).
+
+---
+
+> ⚠️ **Warning:**  
+> **Do not** use the `nosymm` keyword, as the script relies on molecule coordinates to follow standard conventions.
+
+---
+
+#### **Example Command**
+```bash
+bash /home/$USER/Apps/StrainViz/sub_StrainViz.sh -r mol
+```
+
+This will submit the job to the default queue (`standard`) using the default number of cores and the default method (`b3lyp/def2svp`).
+
+---
+
+### **4. Download the Results**
+
+The results will be saved in the `output` directory under the same folder where the job was submitted. For example:
+
+```
+folder/
+├── input/
+├── output/
+│   ├── mol_name/
+│   │   ├── total_force.tcl
+│   │   ├── mol_name.xyz
+│   │   └── other files...
+```
+
+Download the files from the `output` directory to your local machine.
+
+---
+
+### **5. Visualize Results in VMD**
+
+1. Download the following files to the same local directory:
+   - `mol.xyz`
+   - `total_force.tcl`
+
+2. Open **VMD** (Visualization Molecular Dynamics software).
+
+3. In the **VMD Main** window, navigate to `Extensions > Tk Console`.
+
+4. Change to the local folder in the Tk Console:
+   ```bash
+   cd /path/to/local/folder
+   ```
+
+5. Run the following command in the Tk Console:
+   ```tcl
+   source total_force.tcl
+   ```
+
+This will load `total_force.tcl` and `mol.xyz` into VMD and display the molecular structure with force vectors as a color-coded visualization in the VMD Display window.
 
 ---
 
